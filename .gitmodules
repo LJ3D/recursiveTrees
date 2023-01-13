@@ -1,0 +1,3 @@
+[submodule "LJGL"]
+	path = LJGL
+	url = https://github.com/LJ3D/LJGL
