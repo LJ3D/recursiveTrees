@@ -1,5 +1,4 @@
 #include <ljgl.hpp>
-#include <math.h>
 
 struct verts{
     std::vector<float> vertData;
@@ -14,6 +13,7 @@ private:
 
 public:
 
+    void move(double dist){
 /*
         .
       . .
@@ -22,8 +22,6 @@ public:
    ...... 
    cos(angle)
 */
-
-    void move(double dist){
         this->pos.x += dist * cos(this->angle);
         this->pos.y += dist * sin(this->angle);
     }
@@ -75,7 +73,6 @@ int main(){
     turtle2D t;
     drawTree(t, 21, 10.0, M_PI/4, 1.69);
     t.getVerts3D(v);
-
 
     // Create the VBO
     LJGL::VBO vbo;
