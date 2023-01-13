@@ -1,4 +1,5 @@
 #include <ljgl.hpp>
+#include <math.h>
 
 struct verts{
     std::vector<float> vertData;
@@ -13,9 +14,10 @@ private:
 
 public:
 
-    /*  .
+/*
+        .
       . .
-     .  . sin(angle)
+   1 .  . sin(angle)
     .   .
    ...... 
    cos(angle)
@@ -24,10 +26,6 @@ public:
     void move(double dist){
         this->pos.x += dist * cos(this->angle);
         this->pos.y += dist * sin(this->angle);
-    }
-
-    void turn(double a){
-        this->angle += a;
     }
 
     void turnRight(double a){
@@ -53,7 +51,7 @@ public:
 };
 
 
-void drawTree(turtle2D& t, unsigned int level, double size, double angle, double ratio){
+void drawTree(turtle2D& t, unsigned short level, double size, double angle, double ratio){
     if(level != 0){
         t.move(size);
         t.addPoint();
@@ -75,7 +73,7 @@ int main(){
     // Create the vertice data
     verts v;
     turtle2D t;
-    drawTree(t, 20, 1.0, 5.0, 2.0);
+    drawTree(t, 21, 10.0, M_PI/4, 1.69);
     t.getVerts3D(v);
 
 
