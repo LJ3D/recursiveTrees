@@ -9,6 +9,7 @@ class turtle3D{
 private:
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
     std::vector<glm::vec3> points;
+    std::vector<glm::vec3> colours;
 
 public:
     double theta = 0;
@@ -33,13 +34,50 @@ public:
         }
         v.size = points.size();
     }
+
+    void getVertsWithColour(verts& v){
+        for(int i=0; i<points.size(); i++){
+            v.vertData.push_back(points[i].x);
+            v.vertData.push_back(points[i].y);
+            v.vertData.push_back(points[i].z);
+
+            // Colour
+            v.vertData.push_back(i/float(points.size()));
+            v.vertData.push_back(0.0f);
+            v.vertData.push_back((rand() % 100 / 100.0f)/1.2f);
+        }
+        v.size = points.size();
+    }
+
+    void getVertsWithStoredColour(verts& v){
+        for(int i=0; i<points.size(); i++){
+            v.vertData.push_back(points[i].x);
+            v.vertData.push_back(points[i].y);
+            v.vertData.push_back(points[i].z);
+
+            // Colour
+            v.vertData.push_back(colours[i].x);
+            v.vertData.push_back(colours[i].y);
+            v.vertData.push_back(colours[i].z);
+        }
+        v.size = points.size();
+    }
+    
+    void addColour(glm::vec3 colour){
+        colours.push_back(colour);
+    }
 };
 
 
-void drawTree(turtle3D& t, unsigned short level, double size, double angle, double ratio){
+void drawTree(turtle3D& t, unsigned short level, double size, double angle, double ratio, unsigned short maxLevel = 13){
     if(level != 0){
         t.move(size);
         t.addPoint();
+        t.addColour(glm::vec3(
+                            (level/float(maxLevel)),
+                            0.0f,
+                            0.1f
+                    ));
         
         t.theta += angle;
         drawTree(t, level-1, size/ratio, angle, ratio);
@@ -56,6 +94,7 @@ void drawTree(turtle3D& t, unsigned short level, double size, double angle, doub
 
         t.move(-size);
         t.addPoint();
+        t.addColour(glm::vec3(level/float(maxLevel), 0.0f, 0.0f));
     }
 }
 
@@ -69,31 +108,30 @@ int main(){
     suzanne.readEBO("s.ebo");
     suzanne.readVBO("s.vbo");
     suzanne.m_shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
-    suzanne.m_shader.setUniform3f("objectColor", 1.0f, 1.0f, 1.0f);
 
     // Create the vertice data
     verts v;
     turtle3D t;
     t.phi += M_PI/2;
     t.theta += M_PI/2;
-    drawTree(t, 13, 3.0, M_PI/5, 1.6);
-    t.getVerts(v);
-    printf("Vertex count: %llu\n", v.size/3);
+    drawTree(t, 13, 4.0, M_PI/3, 1.7, 13);
+    t.getVertsWithStoredColour(v);
+    printf("Vertex count: %llu\n", v.size/6);
     printf("v.size: %llu\n", v.size);
 
     // Create the VBO
     LJGL::VBO vbo;
-    vbo.generate(v.vertData, v.size * 3 * sizeof(float));
+    vbo.generate(v.vertData, v.size * 6 * sizeof(float));
     // Create the VAO
     LJGL::VAO vao;
     LJGL::VBO_layout layout;
     layout.pushFloat(3);
+    layout.pushFloat(3); // Colour
     vao.addBuffer(vbo, layout);
     // Create basic shader
     LJGL::shader shader;
     shader.use();
     shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
-    shader.setUniform3f("objectColor", 1.0f, 0.2f, 0.2f);
 
     double prevTime = glfwGetTime();
     unsigned long long int frameCount = 0;

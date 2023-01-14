@@ -1,9 +1,9 @@
 #version 330 core
 
-uniform vec3 objectColor;
+in vec3 treeColours;
 
 out vec4 FragColor;
 
 void main(){
-    FragColor = vec4(objectColor, 1.0);
+    FragColor = vec4(treeColours, 1.0);
 }
