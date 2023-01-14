@@ -76,7 +76,7 @@ void drawTree(turtle3D& t, unsigned short level, double size, double angle, doub
         t.addColour(glm::vec3(
                             (level/float(maxLevel)),
                             0.0f,
-                            0.1f
+                            0.0f
                     ));
         
         t.theta += angle;
@@ -135,6 +135,7 @@ int main(){
 
     double prevTime = glfwGetTime();
     unsigned long long int frameCount = 0;
+    glLineWidth(4.0f);
     while(!glfwWindowShouldClose(window)){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
