@@ -133,6 +133,10 @@ int main(){
     shader.use();
     shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
 
+    // Vertex data is copied to the GPU, so it can be deleted
+    v.vertData.clear();
+    v.vertData.shrink_to_fit();
+
     double prevTime = glfwGetTime();
     unsigned long long int frameCount = 0;
     glLineWidth(4.0f);
