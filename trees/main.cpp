@@ -5,96 +5,27 @@ struct verts{
     unsigned long long int size;
 };
 
-class turtle2D{
-private:
-    glm::vec2 pos = glm::vec2(0.0f, 0.0f);
-    double angle = 0;
-    std::vector<glm::vec2> points;
-
-public:
-
-    void move(double dist){
-/*
-        .
-      . .
-   1 .  . sin(angle)
-    .   .
-   ...... 
-   cos(angle)
-*/
-        this->pos.x += dist * cos(this->angle);
-        this->pos.y += dist * sin(this->angle);
-    }
-
-    void turnRight(double a){
-        this->angle += a;
-    }
-
-    void turnLeft(double a){
-        this->angle -= a;
-    }
-
-    void addPoint(){
-        points.push_back(this->pos);
-    }
-
-    void getVerts3D(verts& v){
-        for(int i=0; i<points.size(); i++){
-            v.vertData.push_back(points[i].x);
-            v.vertData.push_back(points[i].y);
-            v.vertData.push_back(0.0f);
-        }
-        v.size = points.size();
-    }
-};
-
-
-
 class turtle3D{
 private:
     glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
-    double angleX = 0;
-    double angleY = 0;
-    double angleZ = 0;
     std::vector<glm::vec3> points;
 
 public:
-    
+    double theta = 0;
+    double phi = 0;
+    // http://www.songho.ca/opengl/files/gl_sphere01.png
+
     void move(double dist){
-        this->pos.x += dist * cos(this->angleX) * cos(this->angleY);
-        this->pos.y += dist * sin(this->angleX);
-        this->pos.z += dist * cos(this->angleX) * sin(this->angleY);
-    }
-
-    void turnRightX(double a){
-        this->angleX += a;
-    }
-
-    void turnLeftX(double a){
-        this->angleX -= a;
-    }
-
-    void turnRightY(double a){
-        this->angleY += a;
-    }
-
-    void turnLeftY(double a){
-        this->angleY -= a;
-    }
-
-    void turnRightZ(double a){
-        this->angleZ += a;
-    }
-
-    void turnLeftZ(double a){
-        this->angleZ -= a;
+        this->pos.x += dist * sin(this->theta) * cos(this->phi);
+        this->pos.y += dist * sin(this->theta) * sin(this->phi);
+        this->pos.z += dist * cos(this->theta);
     }
 
     void addPoint(){
         points.push_back(this->pos);
     }
 
-    void getVerts3D(verts& v){
+    void getVerts(verts& v){
         for(int i=0; i<points.size(); i++){
             v.vertData.push_back(points[i].x);
             v.vertData.push_back(points[i].y);
@@ -104,44 +35,24 @@ public:
     }
 };
 
-/*
-void drawTree(turtle2D& t, unsigned short level, double size, double angle, double ratio){
-    if(level != 0){
-        t.move(size);
-        t.addPoint();
-        t.turnLeft(angle);
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnRight(angle*2);
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnLeft(angle);
-        t.move(-size);
-        t.addPoint();
-    }
-}
-*/
 
 void drawTree(turtle3D& t, unsigned short level, double size, double angle, double ratio){
     if(level != 0){
         t.move(size);
         t.addPoint();
         
-        t.turnLeftX(angle);
+        t.theta += angle;
         drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnRightX(angle*2);
+        t.theta -= angle*2;
         drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnLeftX(angle);
+        t.theta += angle;
 
-        t.turnLeftY(angle);
+        t.phi += angle;
         drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnRightY(angle*2);
+        t.phi -= angle*2;
         drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnLeftY(angle);
+        t.phi += angle;
 
-        t.turnLeftZ(angle);
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnRightZ(angle*2);
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.turnLeftZ(angle);
 
         t.move(-size);
         t.addPoint();
@@ -163,8 +74,10 @@ int main(){
     // Create the vertice data
     verts v;
     turtle3D t;
-    drawTree(t, 7, 5.0, 1.2, 1.55);
-    t.getVerts3D(v);
+    t.phi += M_PI/2;
+    t.theta += M_PI/2;
+    drawTree(t, 13, 3.0, M_PI/5, 1.6);
+    t.getVerts(v);
     printf("Vertex count: %llu\n", v.size/3);
     printf("v.size: %llu\n", v.size);
 
@@ -186,17 +99,20 @@ int main(){
     unsigned long long int frameCount = 0;
     while(!glfwWindowShouldClose(window)){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Update camera
         cam.processInput();
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = cam.getViewMatrix();
         glm::mat4 projection = cam.getPerspectiveMatrix();
 
+        // Render origin suzanne
         suzanne.m_model = glm::mat4(1.0f);
         suzanne.m_view = view;
         suzanne.m_projection = projection;
         suzanne.draw();
 
-
+        // Render tree
         shader.use();
         shader.setUniformMat4fv("model", glm::value_ptr(model));
         shader.setUniformMat4fv("view", glm::value_ptr(view));
@@ -205,6 +121,8 @@ int main(){
         glDrawArrays(GL_LINE_STRIP, 0, v.size);
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        // Framerate stats
         frameCount++;
         double currentTime = glfwGetTime();
         if(currentTime - prevTime >= 1.0){
