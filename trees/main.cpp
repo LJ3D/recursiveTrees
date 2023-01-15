@@ -1,102 +1,5 @@
 #include <ljgl.hpp>
-
-struct verts{
-    std::vector<float> vertData;
-    unsigned long long int size;
-};
-
-class turtle3D{
-private:
-    glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
-    std::vector<glm::vec3> points;
-    std::vector<glm::vec3> colours;
-
-public:
-    double theta = 0;
-    double phi = 0;
-    // http://www.songho.ca/opengl/files/gl_sphere01.png
-
-    void move(double dist){
-        this->pos.x += dist * sin(this->theta) * cos(this->phi);
-        this->pos.y += dist * sin(this->theta) * sin(this->phi);
-        this->pos.z += dist * cos(this->theta);
-    }
-
-    void addPoint(){
-        points.push_back(this->pos);
-    }
-
-    void getVerts(verts& v){
-        for(int i=0; i<points.size(); i++){
-            v.vertData.push_back(points[i].x);
-            v.vertData.push_back(points[i].y);
-            v.vertData.push_back(points[i].z);
-        }
-        v.size = points.size();
-    }
-
-    void getVertsWithColour(verts& v){
-        for(int i=0; i<points.size(); i++){
-            v.vertData.push_back(points[i].x);
-            v.vertData.push_back(points[i].y);
-            v.vertData.push_back(points[i].z);
-
-            // Colour
-            v.vertData.push_back(i/float(points.size()));
-            v.vertData.push_back(0.0f);
-            v.vertData.push_back((rand() % 100 / 100.0f)/1.2f);
-        }
-        v.size = points.size();
-    }
-
-    void getVertsWithStoredColour(verts& v){
-        for(int i=0; i<points.size(); i++){
-            v.vertData.push_back(points[i].x);
-            v.vertData.push_back(points[i].y);
-            v.vertData.push_back(points[i].z);
-
-            // Colour
-            v.vertData.push_back(colours[i].x);
-            v.vertData.push_back(colours[i].y);
-            v.vertData.push_back(colours[i].z);
-        }
-        v.size = points.size();
-    }
-    
-    void addColour(glm::vec3 colour){
-        colours.push_back(colour);
-    }
-};
-
-
-void drawTree(turtle3D& t, unsigned short level, double size, double angle, double ratio, unsigned short maxLevel = 13){
-    if(level != 0){
-        t.move(size);
-        t.addPoint();
-        t.addColour(glm::vec3(
-                            (level/float(maxLevel)),
-                            0.0f,
-                            0.0f
-                    ));
-        
-        t.theta += angle;
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.theta -= angle*2;
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.theta += angle;
-
-        t.phi += angle;
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.phi -= angle*2;
-        drawTree(t, level-1, size/ratio, angle, ratio);
-        t.phi += angle;
-
-
-        t.move(-size);
-        t.addPoint();
-        t.addColour(glm::vec3(level/float(maxLevel), 0.0f, 0.0f));
-    }
-}
+#include "treeGenerator.hpp"
 
 int main(){
     // Window + cam setup
@@ -110,18 +13,16 @@ int main(){
     suzanne.m_shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
 
     // Create the vertice data
-    verts v;
-    turtle3D t;
-    t.phi += M_PI/2;
-    t.theta += M_PI/2;
-    drawTree(t, 13, 4.0, M_PI/3, 1.7, 13);
-    t.getVertsWithStoredColour(v);
-    printf("Vertex count: %llu\n", v.size/6);
-    printf("v.size: %llu\n", v.size);
+    treeCreator9000 treeGen;
+    treeGen.createTree(13, 2.0, M_PI/2.7, 1.6, 10); // level, size, angle, ratio, maxLevel
+    unsigned long long int vertDataSize = treeGen.vertices.size();
+    printf("Vertice data size: %llu\n", vertDataSize);
+    printf("Vertex count: %llu\n", vertDataSize/6);
 
     // Create the VBO
     LJGL::VBO vbo;
-    vbo.generate(v.vertData, v.size * 6 * sizeof(float));
+    vbo.generate(treeGen.vertices, vertDataSize * sizeof(float));
+    treeGen.clear(); // Vertex data is copied to the GPU, so it can be deleted
     // Create the VAO
     LJGL::VAO vao;
     LJGL::VBO_layout layout;
@@ -133,9 +34,6 @@ int main(){
     shader.use();
     shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
 
-    // Vertex data is copied to the GPU, so it can be deleted
-    v.vertData.clear();
-    v.vertData.shrink_to_fit();
 
     double prevTime = glfwGetTime();
     unsigned long long int frameCount = 0;
@@ -161,7 +59,7 @@ int main(){
         shader.setUniformMat4fv("view", glm::value_ptr(view));
         shader.setUniformMat4fv("projection", glm::value_ptr(projection));
         vao.bind();
-        glDrawArrays(GL_LINE_STRIP, 0, v.size);
+        glDrawArrays(GL_LINE_STRIP, 0, vertDataSize/6);
         glfwSwapBuffers(window);
         glfwPollEvents();
 
