@@ -6,15 +6,10 @@ int main(){
     GLFWwindow* window = LJGL::init(1024, 1024, "trees", 3, 3);
     LJGL::camera cam(window);
 
-    // Add a suzanne at the origin
-    LJGL::model suzanne;
-    suzanne.readEBO("s.ebo");
-    suzanne.readVBO("s.vbo");
-    suzanne.m_shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
-
     // Create the vertice data
     treeCreator9000 treeGen;
-    treeGen.createTree(13, 2.0, M_PI/2.7, 1.6, 10); // level, size, angle, ratio, maxLevel
+    const int l = 11;
+    treeGen.createTree(l, 2.0, M_PI/3.3, 1.6, l); // level, size, angle, ratio, maxLevel
     unsigned long long int vertDataSize = treeGen.vertices.size();
     printf("Vertice data size: %llu\n", vertDataSize);
     printf("Vertex count: %llu\n", vertDataSize/6);
@@ -33,7 +28,7 @@ int main(){
     LJGL::shader shader;
     shader.use();
     shader.createShader("GLSL/shader.vert.glsl", "GLSL/shader.frag.glsl");
-
+    shader.setUniformMat4fv("model", glm::value_ptr(glm::mat4(1.0f)));
 
     double prevTime = glfwGetTime();
     unsigned long long int frameCount = 0;
@@ -43,21 +38,11 @@ int main(){
 
         // Update camera
         cam.processInput();
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = cam.getViewMatrix();
-        glm::mat4 projection = cam.getPerspectiveMatrix();
-
-        // Render origin suzanne
-        suzanne.m_model = glm::mat4(1.0f);
-        suzanne.m_view = view;
-        suzanne.m_projection = projection;
-        suzanne.draw();
 
         // Render tree
         shader.use();
-        shader.setUniformMat4fv("model", glm::value_ptr(model));
-        shader.setUniformMat4fv("view", glm::value_ptr(view));
-        shader.setUniformMat4fv("projection", glm::value_ptr(projection));
+        shader.setUniformMat4fv("view", glm::value_ptr(cam.getViewMatrix()));
+        shader.setUniformMat4fv("projection", glm::value_ptr(cam.getPerspectiveMatrix()));
         vao.bind();
         glDrawArrays(GL_LINE_STRIP, 0, vertDataSize/6);
         glfwSwapBuffers(window);
